@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Task Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0f172a;--surface:#1e293b;--surface2:#263348;--border:#334155;
+      --text:#e2e8f0;--muted:#94a3b8;--accent:#6366f1;--accent-h:#4f46e5;
+      --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--radius:8px;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    .header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;gap:16px;height:56px}
+    .logo{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
+    .logo span{color:var(--accent)}
+    .pill{font-size:11px;padding:3px 10px;border-radius:999px;font-weight:500}
+    .pill-g{background:rgba(34,197,94,.15);color:var(--green)}
+    .pill-r{background:rgba(239,68,68,.15);color:var(--red)}
+    .main{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 56px)}
+    .panel{padding:1.5rem;overflow-y:auto}
+    .panel-r{background:#080f1a;border-left:1px solid var(--border);display:flex;flex-direction:column}
+    .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem}
+    .metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+    .metric-val{font-size:26px;font-weight:600}
+    .metric-lbl{font-size:12px;color:var(--muted);margin-top:2px}
+    .tabs{display:flex;gap:2px;margin-bottom:1.25rem;background:var(--surface);border-radius:var(--radius);padding:4px;width:fit-content}
+    .tab{font-size:13px;padding:6px 16px;border-radius:6px;cursor:pointer;color:var(--muted);background:none;border:none;font-family:inherit;font-weight:500;transition:all .15s}
+    .tab.active{background:var(--accent);color:#fff}
+    .form-row{display:flex;gap:8px;margin-bottom:1.25rem}
+    input{font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:inherit;outline:none;flex:1}
+    input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(99,102,241,.2)}
+    input::placeholder{color:var(--muted)}
+    .btn{font-size:13px;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:inherit;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:6px}
+    .btn:hover{background:var(--surface2)}
+    .btn-p{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .btn-p:hover{background:var(--accent-h)}
+    .btn-d{color:var(--red);border-color:transparent;background:transparent;padding:6px 8px}
+    .btn-d:hover{background:rgba(239,68,68,.1)}
+    .btn-sm{padding:5px 10px;font-size:12px}
+    .slbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+    .list{display:flex;flex-direction:column;gap:6px}
+    .card{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);transition:border-color .15s}
+    .card:hover{border-color:#475569}
+    .card.done .ctitle{text-decoration:line-through;color:var(--muted)}
+    .ctitle{font-size:13px;font-family:'JetBrains Mono',monospace;flex:1}
+    .cbadge{font-size:10px;padding:2px 8px;border-radius:999px;font-weight:500}
+    .bdone{background:rgba(34,197,94,.15);color:var(--green)}
+    .bpend{background:rgba(148,163,184,.12);color:var(--muted)}
+    .chk{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+    .avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+    .uname{font-size:13px;font-weight:500}
+    .uemail{font-size:11px;color:var(--muted)}
+    .empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:13px}
+    /* Terminal */
+    .th{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .dots{display:flex;gap:5px}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .ttitle{font-size:11px;color:#475569;font-family:'JetBrains Mono',monospace;margin-left:4px}
+    .tb{flex:1;overflow-y:auto;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8}
+    .lt{color:#334155}.lG{color:#22c55e}.lP{color:#6366f1}.lD{color:#ef4444}.lA{color:#f59e0b}
+    .lp{color:#64748b}.l2{color:#22c55e}.l4{color:#ef4444}.lm{color:#475569}
+    .cursor{display:inline-block;width:7px;height:12px;background:var(--accent);animation:blink 1s step-end infinite;vertical-align:-2px;margin-left:2px}
+    @keyframes blink{50%{opacity:0}}
+    .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;font-size:13px;z-index:999;display:none;animation:si .2s ease}
+    @keyframes si{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+    #tab-users{display:none}
+    .db-badge{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(99,102,241,.15);color:var(--accent);margin-left:6px;font-family:'JetBrains Mono',monospace}
+  </style>
+</head>
+<body>
+<header class="header">
+  <div class="logo">⬡ Task <span>Manager</span> <span class="db-badge">+ PostgreSQL</span></div>
+  <span id="svc-status" class="pill pill-r">● checking...</span>
+  <span style="margin-left:auto;font-size:12px;color:var(--muted)">gateway → <code style="color:var(--accent)">localhost:8000</code></span>
+</header>
+
+<div class="main">
+  <div class="panel">
+    <div class="metrics">
+      <div class="metric"><div class="metric-val" id="m-tasks">–</div><div class="metric-lbl">Total Tasks</div></div>
+      <div class="metric"><div class="metric-val" id="m-done">–</div><div class="metric-lbl">Done</div></div>
+      <div class="metric"><div class="metric-val" id="m-users">–</div><div class="metric-lbl">Users</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('tasks',this)">Tasks</button>
+      <button class="tab" onclick="switchTab('users',this)">Users</button>
+    </div>
+
+    <div id="tab-tasks">
+      <div class="form-row">
+        <input id="task-title" placeholder="New task title…" onkeydown="if(event.key==='Enter')addTask()"/>
+        <button class="btn btn-p" onclick="addTask()">+ Add Task</button>
+      </div>
+      <div class="slbl">All Tasks</div>
+      <div class="list" id="task-list">
+        <div class="empty" id="task-empty">No tasks yet. Add one above.</div>
+      </div>
+    </div>
+
+    <div id="tab-users">
+      <div class="form-row">
+        <input id="user-name" placeholder="Name" style="max-width:140px"/>
+        <input id="user-email" placeholder="Email" onkeydown="if(event.key==='Enter')addUser()"/>
+        <button class="btn btn-p" onclick="addUser()">+ Add User</button>
+      </div>
+      <div class="slbl">All Users</div>
+      <div class="list" id="user-list">
+        <div class="empty" id="user-empty">No users yet. Add one above.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-r">
+    <div class="th">
+      <div class="dots">
+        <div class="dot" style="background:#ef4444"></div>
+        <div class="dot" style="background:#f59e0b"></div>
+        <div class="dot" style="background:#22c55e"></div>
+      </div>
+      <span class="ttitle">api-gateway · :8000</span>
+    </div>
+    <div class="tb" id="terminal">
+      <div><span class="lm">connecting to gateway…</span> <span class="cursor"></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://localhost:8000';
+
+function ts(){ return new Date().toTimeString().slice(0,8) }
+
+function log(method, path, status, msg){
+  const t = document.getElementById('terminal');
+  t.querySelector('.cursor')?.parentElement?.remove();
+  const sc = String(status)[0];
+  const mc = {GET:'lG',POST:'lP',DELETE:'lD',PATCH:'lA'}[method]||'lm';
+  t.innerHTML += `<div><span class="lt">${ts()}</span>  <span class="${mc}">${method.padEnd(7)}</span><span class="lp">${path}</span>  <span class="l${sc}">${status}</span>  <span class="lm">${msg}</span></div>`;
+  t.innerHTML += `<div><span class="cursor"></span></div>`;
+  t.scrollTop = t.scrollHeight;
+}
+
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.display='block';
+  setTimeout(()=>el.style.display='none',2500);
+}
+
+async function api(method, path, body){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(API+path,opts);
+  return {status:r.status, data: r.status===204 ? null : await r.json()};
+}
+
+async function checkHealth(){
+  try{
+    const {data}=await api('GET','/health');
+    log('GET','/health',200,'all services up');
+    document.getElementById('svc-status').textContent='● 3 services up';
+    document.getElementById('svc-status').className='pill pill-g';
+  }catch(e){
+    log('GET','/health',503,'gateway unreachable');
+  }
+}
+
+// ── Tasks ─────────────────────────────────────────────────────────
+let tasks={};
+
+async function loadTasks(){
+  try{
+    const {status,data}=await api('GET','/tasks');
+    tasks={};
+    data.forEach(t=>tasks[t.id]=t);
+    log('GET','/tasks',status,`${data.length} tasks`);
+    renderTasks();
+  }catch(e){ log('GET','/tasks',500,'failed'); }
+}
+
+async function addTask(){
+  const inp=document.getElementById('task-title');
+  const title=inp.value.trim(); if(!title) return;
+  try{
+    const {status,data}=await api('POST','/tasks',{title,done:false});
+    tasks[data.id]=data; inp.value='';
+    log('POST','/tasks',status,`"${title}" → DB`);
+    renderTasks(); toast(`Task "${title}" saved to DB`);
+  }catch(e){ log('POST','/tasks',500,'create failed'); }
+}
+
+async function toggleTask(id, done){
+  const task=tasks[id]; if(!task) return;
+  try{
+    const {status,data}=await api('PATCH',`/tasks/${id}`,{...task,done});
+    tasks[id]=data;
+    log('PATCH',`/tasks/${id.slice(0,8)}…`,status,done?'marked done':'pending');
+    renderTasks();
+  }catch(e){ log('PATCH',`/tasks/${id.slice(0,8)}…`,500,'update failed'); }
+}
+
+async function deleteTask(id){
+  const title=tasks[id]?.title;
+  try{
+    const {status}=await api('DELETE',`/tasks/${id}`);
+    delete tasks[id];
+    log('DELETE',`/tasks/${id.slice(0,8)}…`,status,`"${title}" deleted`);
+    renderTasks(); toast('Task deleted from DB');
+  }catch(e){ log('DELETE',`/tasks/${id.slice(0,8)}…`,500,'delete failed'); }
+}
+
+function renderTasks(){
+  const list=document.getElementById('task-list');
+  const empty=document.getElementById('task-empty');
+  list.querySelectorAll('.card').forEach(el=>el.remove());
+  const all=Object.values(tasks);
+  empty.style.display=all.length?'none':'';
+  all.forEach(task=>{
+    const card=document.createElement('div');
+    card.className=`card${task.done?' done':''}`;
+    card.innerHTML=`
+      <input type="checkbox" class="chk" ${task.done?'checked':''} onchange="toggleTask('${task.id}',this.checked)"/>
+      <span class="ctitle">${task.title}</span>
+      <span class="cbadge ${task.done?'bdone':'bpend'}">${task.done?'done':'pending'}</span>
+      <button class="btn btn-d btn-sm" onclick="deleteTask('${task.id}')">✕</button>
+    `;
+    list.appendChild(card);
+  });
+  updateMetrics();
+}
+
+// ── Users ─────────────────────────────────────────────────────────
+let users={};
+
+async function loadUsers(){
+  try{
+    const {status,data}=await api('GET','/users');
+    users={};
+    data.forEach(u=>users[u.id]=u);
+    log('GET','/users',status,`${data.length} users`);
+    renderUsers();
+  }catch(e){ log('GET','/users',500,'failed'); }
+}
+
+async function addUser(){
+  const name=document.getElementById('user-name').value.trim();
+  const email=document.getElementById('user-email').value.trim();
+  if(!name||!email){toast('Name and email required');return;}
+  try{
+    const {status,data}=await api('POST','/users',{name,email});
+    users[data.id]=data;
+    document.getElementById('user-name').value='';
+    document.getElementById('user-email').value='';
+    log('POST','/users',status,`${name} → DB`);
+    renderUsers(); toast(`User "${name}" saved to DB`);
+  }catch(e){ log('POST','/users',500,'create failed — email may exist'); toast('Error: email may already exist'); }
+}
+
+async function deleteUser(id){
+  const name=users[id]?.name;
+  try{
+    const {status}=await api('DELETE',`/users/${id}`);
+    delete users[id];
+    log('DELETE',`/users/${id.slice(0,8)}…`,status,`${name} deleted`);
+    renderUsers(); toast('User deleted from DB');
+  }catch(e){ log('DELETE',`/users/${id.slice(0,8)}…`,500,'delete failed'); }
+}
+
+function renderUsers(){
+  const list=document.getElementById('user-list');
+  const empty=document.getElementById('user-empty');
+  list.querySelectorAll('.card').forEach(el=>el.remove());
+  const all=Object.values(users);
+  empty.style.display=all.length?'none':'';
+  all.forEach(user=>{
+    const initials=user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const card=document.createElement('div');
+    card.className='card';
+    card.innerHTML=`
+      <div class="avatar">${initials}</div>
+      <div style="flex:1"><div class="uname">${user.name}</div><div class="uemail">${user.email}</div></div>
+      <button class="btn btn-d btn-sm" onclick="deleteUser('${user.id}')">✕</button>
+    `;
+    list.appendChild(card);
+  });
+  updateMetrics();
+}
+
+function updateMetrics(){
+  const all=Object.values(tasks);
+  document.getElementById('m-tasks').textContent=all.length;
+  document.getElementById('m-done').textContent=all.filter(t=>t.done).length;
+  document.getElementById('m-users').textContent=Object.keys(users).length;
+}
+
+function switchTab(tab,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-tasks').style.display=tab==='tasks'?'':'none';
+  document.getElementById('tab-users').style.display=tab==='users'?'':'none';
+  if(tab==='tasks') loadTasks(); else loadUsers();
+}
+
+checkHealth(); loadTasks(); loadUsers();
+</script>
+</body>
+</html>
