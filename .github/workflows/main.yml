@@ -16,7 +16,7 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: |
-          pip install -r task-service/requirements.txt
+          pip install -r task-manager-db/task-service/requirements.txt
           pip install pytest httpx sqlalchemy[sqlite]
       - name: Run tests
         run: |
