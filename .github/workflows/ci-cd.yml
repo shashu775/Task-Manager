@@ -42,7 +42,7 @@ jobs:
   build-and-push:
     needs: [test-task-service, test-user-service]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'
     strategy:
       matrix:
         service: [task-service, user-service, api-gateway]
