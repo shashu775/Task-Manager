@@ -549,7 +549,6 @@ data:
             .btn-del { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 0.25rem 0.5rem; font-size: 0.8rem; }
             .btn-del:hover { background: var(--danger); color: white; }
 
-            /* Terminal Sidebar Styling */
             .terminal-panel {
                 background-color: var(--bg-terminal);
                 border-left: 1px solid var(--border);
@@ -589,7 +588,6 @@ data:
         </style>
     </head>
     <body>
-
         <header>
             <h1>Task Manager Distributed System</h1>
             <div class="metrics">
@@ -638,7 +636,7 @@ data:
         </div>
 
         <script>
-            const GATEWAY_URL = window.location.origin; // Using origin dynamically handles routing through the ingress
+            const GATEWAY_URL = window.location.origin;
             let activeTab = 'tasks';
 
             function logStream(method, endpoint, status, message) {
@@ -782,7 +780,7 @@ data:
         </script>
     </body>
     </html>
-----
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
