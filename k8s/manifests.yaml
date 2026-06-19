@@ -451,6 +451,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: frontend-svc # Must match your Service name
+            name: frontend # Must match your Service name
             port:
               number: 80
