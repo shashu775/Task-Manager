@@ -426,12 +426,362 @@ metadata:
 data:
   index.html: |
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Task Manager Dashboard</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+        <style>
+            :root {
+                --bg-base: #0f172a;
+                --bg-surface: #1e293b;
+                --bg-terminal: #020617;
+                --accent: #6366f1;
+                --accent-hover: #4f46e5;
+                --success: #22c55e;
+                --danger: #ef4444;
+                --text-main: #f8fafc;
+                --text-muted: #94a3b8;
+                --border: #334155;
+            }
+
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+                background-color: var(--bg-base);
+                color: var(--text-main);
+                font-family: 'Inter', sans-serif;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            header {
+                background-color: var(--bg-surface);
+                border-bottom: 1px solid var(--border);
+                padding: 1rem 2rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            header h1 { font-size: 1.25rem; font-weight: 600; color: var(--text-main); }
+            
+            .metrics { display: flex; gap: 1.5rem; }
+            .metric-badge {
+                background: var(--bg-base);
+                border: 1px solid var(--border);
+                padding: 0.25rem 0.75rem;
+                border-radius: 6px;
+                font-size: 0.85rem;
+                color: var(--text-muted);
+            }
+            .metric-badge span { color: var(--accent); font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+
+            .main-container {
+                display: grid;
+                grid-template-columns: 1fr 450px;
+                flex: 1;
+                overflow: hidden;
+            }
+
+            .workspace {
+                padding: 2rem;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 2rem;
+            }
+
+            .tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+            .tab {
+                padding: 0.5rem 1rem;
+                color: var(--text-muted);
+                cursor: pointer;
+                border-bottom: 2px solid transparent;
+                font-weight: 500;
+            }
+            .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+            .panel { background-color: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
+            .panel h2 { font-size: 1rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+            .input-group { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+            input {
+                flex: 1;
+                background-color: var(--bg-base);
+                border: 1px solid var(--border);
+                padding: 0.6rem 1rem;
+                border-radius: 6px;
+                color: var(--text-main);
+                font-family: inherit;
+            }
+            input:focus { border-color: var(--accent); outline: none; }
+            
+            button {
+                background-color: var(--accent);
+                color: white;
+                border: none;
+                padding: 0.6rem 1.2rem;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 500;
+            }
+            button:hover { background-color: var(--accent-hover); }
+
+            .data-list { display: flex; flex-direction: column; gap: 0.5rem; }
+            .data-item {
+                background-color: var(--bg-base);
+                border: 1px solid var(--border);
+                padding: 0.75rem 1rem;
+                border-radius: 6px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .task-title { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; }
+            .task-title.done { text-decoration: line-through; color: var(--text-muted); opacity: 0.6; }
+
+            .actions { display: flex; gap: 0.5rem; align-items: center; }
+            .btn-check { background: transparent; border: 1px solid var(--success); color: var(--success); padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+            .btn-check:hover { background: var(--success); color: white; }
+            .btn-del { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+            .btn-del:hover { background: var(--danger); color: white; }
+
+            /* Terminal Sidebar Styling */
+            .terminal-panel {
+                background-color: var(--bg-terminal);
+                border-left: 1px solid var(--border);
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            .terminal-header {
+                background-color: var(--bg-surface);
+                padding: 0.75rem 1rem;
+                border-bottom: 1px solid var(--border);
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.8rem;
+                color: var(--text-muted);
+                display: flex;
+                justify-content: space-between;
+            }
+            .terminal-logs {
+                flex: 1;
+                padding: 1rem;
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.85rem;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+            }
+            .log-line { line-height: 1.4; }
+            .log-time { color: var(--text-muted); }
+            .log-method { font-weight: bold; padding: 0 4px; border-radius: 3px; }
+            .log-method.POST { background-color: rgba(99, 102, 241, 0.2); color: #818cf8; }
+            .log-method.GET { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; }
+            .log-method.DELETE { background-color: rgba(239, 68, 68, 0.2); color: #f87171; }
+            .log-status { font-weight: bold; }
+            .log-status.s-2xx { color: var(--success); }
+            .log-status.s-4xx { color: var(--danger); }
+        </style>
+    </head>
     <body>
-      <h1>Task Manager is here</h1>
+
+        <header>
+            <h1>Task Manager Distributed System</h1>
+            <div class="metrics">
+                <div class="metric-badge">Tasks: <span id="m-tasks">0</span></div>
+                <div class="metric-badge">Completed: <span id="m-done">0</span></div>
+                <div class="metric-badge">Users: <span id="m-users">0</span></div>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <div class="workspace">
+                <div class="tabs">
+                    <div class="tab active" id="tab-tasks" onclick="switchTab('tasks')">Tasks Engine</div>
+                    <div class="tab" id="tab-users" onclick="switchTab('users')">User Registry</div>
+                </div>
+
+                <div id="view-tasks" class="panel">
+                    <h2>Active Task Queue</h2>
+                    <div class="input-group">
+                        <input type="text" id="task-input" placeholder="Queue a microservice task..." onkeydown="if(event.key==='Enter') addTask()">
+                        <button onclick="addTask()">Dispatch Task</button>
+                    </div>
+                    <div id="tasks-list" class="data-list"></div>
+                </div>
+
+                <div id="view-users" class="panel" style="display: none;">
+                    <h2>System Users</h2>
+                    <div class="input-group" style="flex-direction: column; gap: 0.5rem;">
+                        <input type="text" id="user-name" placeholder="User Name">
+                        <input type="email" id="user-email" placeholder="User Email Address">
+                        <button onclick="addUser()" style="align-self: flex-start;">Register User</button>
+                    </div>
+                    <div id="users-list" class="data-list"></div>
+                </div>
+            </div>
+
+            <div class="terminal-panel">
+                <div class="terminal-header">
+                    <span>⚡ Gateway Stream (Port 8000)</span>
+                    <span style="color: var(--success)">● Connected</span>
+                </div>
+                <div class="terminal-logs" id="terminal-stream">
+                    <div class="log-line"><span class="log-time">[SYSTEM]</span> Init telemetry logger output...</div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const GATEWAY_URL = window.location.origin; // Using origin dynamically handles routing through the ingress
+            let activeTab = 'tasks';
+
+            function logStream(method, endpoint, status, message) {
+                const stream = document.getElementById('terminal-stream');
+                const now = new Date().toISOString().split('T')[1].substring(0, 8);
+                const statusClass = status >= 200 && status < 300 ? 's-2xx' : 's-4xx';
+                
+                const line = document.createElement('div');
+                line.className = 'log-line';
+                line.innerHTML = `
+                    <span class="log-time">[${now}]</span> 
+                    <span class="log-method ${method}">${method}</span> 
+                    <span class="log-status ${statusClass}">${status}</span> 
+                    <span style="color: #e2e8f0">${endpoint}</span> 
+                    <span style="color: var(--text-muted)">- ${message}</span>
+                `;
+                stream.appendChild(line);
+                stream.scrollTop = stream.scrollHeight;
+            }
+
+            function switchTab(tab) {
+                activeTab = tab;
+                document.getElementById('tab-tasks').className = tab === 'tasks' ? 'tab active' : 'tab';
+                document.getElementById('tab-users').className = tab === 'users' ? 'tab active' : 'tab';
+                document.getElementById('view-tasks').style.display = tab === 'tasks' ? 'block' : 'none';
+                document.getElementById('view-users').style.display = tab === 'users' ? 'block' : 'none';
+            }
+
+            async function fetchSystemData() {
+                try {
+                    const tRes = await fetch(`${GATEWAY_URL}/tasks`);
+                    const tasks = await tRes.json();
+                    logStream('GET', '/tasks', tRes.status, `Fetched ${tasks.length} tasks`);
+                    
+                    const uRes = await fetch(`${GATEWAY_URL}/users`);
+                    const users = await uRes.json();
+                    logStream('GET', '/users', uRes.status, `Fetched ${users.length} users`);
+
+                    renderTasks(tasks);
+                    renderUsers(users);
+                    updateMetrics(tasks, users);
+                } catch (err) {
+                    logStream('ERR', '/network', 500, `Cannot establish connection to Gateway`);
+                }
+            }
+
+            function updateMetrics(tasks, users) {
+                document.getElementById('m-tasks').innerText = tasks.length;
+                document.getElementById('m-done').innerText = tasks.filter(t => t.done).length;
+                document.getElementById('m-users').innerText = users.length;
+            }
+
+            function renderTasks(tasks) {
+                const container = document.getElementById('tasks-list');
+                container.innerHTML = tasks.length === 0 ? '<div style="color: var(--text-muted); font-size:0.9rem;">No active threads inside task dictionary.</div>' : '';
+                tasks.forEach(task => {
+                    const item = document.createElement('div');
+                    item.className = 'data-item';
+                    item.innerHTML = `
+                        <span class="task-title ${task.done ? 'done' : ''}">[id: ${task.id.substring(0,8)}] ${task.title}</span>
+                        <div class="actions">
+                            <button class="btn-del" onclick="deleteTask('${task.id}')">Drop</button>
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+
+            function renderUsers(users) {
+                const container = document.getElementById('users-list');
+                container.innerHTML = users.length === 0 ? '<div style="color: var(--text-muted); font-size:0.9rem;">No profiles synchronized to ledger.</div>' : '';
+                users.forEach(user => {
+                    const item = document.createElement('div');
+                    item.className = 'data-item';
+                    item.innerHTML = `
+                        <div>
+                            <div style="font-weight:500;">${user.name}</div>
+                            <div style="font-size:0.8rem; color:var(--text-muted);">${user.email}</div>
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+
+            async function addTask() {
+                const input = document.getElementById('task-input');
+                const title = input.value.trim();
+                if(!title) return;
+
+                try {
+                    const res = await fetch(`${GATEWAY_URL}/tasks`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: title, done: false })
+                    });
+                    const data = await res.json();
+                    logStream('POST', '/tasks', res.status, `Dispatched: "${title}"`);
+                    input.value = '';
+                    fetchSystemData();
+                } catch(e) {
+                    logStream('POST', '/tasks', 500, 'Transaction execution failed');
+                }
+            }
+
+            async function addUser() {
+                const nameInput = document.getElementById('user-name');
+                const emailInput = document.getElementById('user-email');
+                const name = nameInput.value.trim();
+                const email = emailInput.value.trim();
+                if(!name || !email) return;
+
+                try {
+                    const res = await fetch(`${GATEWAY_URL}/users`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email })
+                    });
+                    logStream('POST', '/users', res.status, `Registered profile payload for ${name}`);
+                    nameInput.value = '';
+                    emailInput.value = '';
+                    fetchSystemData();
+                } catch(e) {
+                    logStream('POST', '/users', 500, 'Failed tracking validation lifecycle');
+                }
+            }
+
+            async function deleteTask(id) {
+                try {
+                    const res = await fetch(`${GATEWAY_URL}/tasks/${id}`, { method: 'DELETE' });
+                    logStream('DELETE', `/tasks/${id.substring(0,8)}`, res.status, `Purged resource node`);
+                    fetchSystemData();
+                } catch(e) {
+                    logStream('DELETE', '/tasks', 500, 'Eviction abort runtime interrupt');
+                }
+            }
+
+            window.onload = () => {
+                fetchSystemData();
+                setInterval(fetchSystemData, 5000);
+            };
+        </script>
     </body>
     </html>
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
