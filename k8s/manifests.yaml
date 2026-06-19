@@ -432,7 +432,7 @@ metadata:
     # elbv2.k8s.aws/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
 spec:
   rules:
-  - host: yourdomain.com # Put your actual domain here (e.g., shashwataws.online)
+  - host: task-manager.local # Put your actual domain here (e.g., shashwataws.online)
     http:
       paths:
       - path: /
