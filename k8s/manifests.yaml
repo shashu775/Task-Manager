@@ -636,7 +636,7 @@ data:
         </div>
 
         <script>
-            const GATEWAY_URL = window.location.origin;
+            const GATEWAY_URL = window.location.origin + "/api";
             let activeTab = 'tasks';
 
             function logStream(method, endpoint, status, message) {
@@ -787,19 +787,24 @@ metadata:
   name: frontend-ingress
   namespace: task-manager
   annotations:
-    # If using NGINX Ingress Controller:
     kubernetes.io/ingress.class: "nginx"
-    # If using AWS ALB Controller, you'd use:
-    # elbv2.k8s.aws/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   rules:
-  - host: task-manager.local # Put your actual domain here (e.g., shashwataws.online)
+  - host: task-manager.local
     http:
       paths:
-      - path: /
-        pathType: Prefix
+      - path: /api(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
-            name: frontend # Must match your Service name
+            name: api-gateway
+            port:
+              number: 8000
+      - path: /(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: frontend
             port:
               number: 80
